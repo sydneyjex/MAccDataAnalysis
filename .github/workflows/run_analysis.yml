@@ -7,6 +7,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   rank-core-courses:
     runs-on: ubuntu-24.04
@@ -33,3 +36,26 @@ jobs:
         with:
           name: rank-order-results
           path: outputs/
+
+      - name: Configure git user
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for output changes
+        id: output_changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- outputs/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit generated outputs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.output_changes.outputs.changed == 'true'
+        run: |
+          git add outputs/
+          git commit -m "Add generated outputs"
+          git push origin main
