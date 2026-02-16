@@ -31,31 +31,11 @@ jobs:
       - name: Run ranking analysis
         run: python src/rank_courses.py
 
-      - name: Upload analysis outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: rank-order-results
-          path: outputs/
-
-      - name: Configure git user
+      - name: Commit outputs
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Check for output changes
-        id: output_changes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if git diff --quiet -- outputs/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Commit generated outputs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.output_changes.outputs.changed == 'true'
-        run: |
-          git add outputs/
-          git commit -m "Add generated outputs"
-          git push origin main
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add outputs/*
+          git commit -m "Add generated outputs" || echo "No changes to commit"
+          git push
